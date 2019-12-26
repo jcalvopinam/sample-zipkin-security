@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.jcalvopinam</groupId>
+    <artifactId>sample-zipkin-security</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <name>sample-zipkin-security</name>
+    <description>Sample module that adds basic auth to an existing Zipkin</description>
+
+    <!-- Took as reference from:
+         https://github.com/openzipkin/zipkin/issues/782#issuecomment-433306013 -->
+
+    <properties>
+        <!-- Make sure this matches zipkin-server's spring boot version.
+             Spring boot 2.1.1.RELEASE works fine with zipkin server 2.12.0 -->
+        <java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+        <zipkin-layout-factory.version>0.0.4</zipkin-layout-factory.version>
+        <maven-jar.version>3.1.2</maven-jar.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring security dependency for auth -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <version>${spring-boot.version}</version>
+            <exclusions>
+                <!-- Zipkin already has this -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <archive>
+                                <!-- prevents huge pom file from also being added to the jar under META-INF/maven -->
+                                <addMavenDescriptor>false</addMavenDescriptor>
+                            </archive>
+                        </configuration>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <layoutFactory implementation="zipkin.layout.ZipkinLayoutFactory">
+                        <name>custom</name>
+                    </layoutFactory>
+                    <classifier>module</classifier>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.zipkin.layout</groupId>
+                        <artifactId>zipkin-layout-factory</artifactId>
+                        <version>${zipkin-layout-factory.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
